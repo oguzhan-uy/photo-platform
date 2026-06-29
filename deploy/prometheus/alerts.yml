@@ -1,0 +1,56 @@
+groups:
+  - name: photo_platform
+    rules:
+      - alert: HighAPIErrorRate
+        expr: |
+          rate(http_requests_total{status=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API 5xx error rate above 5%"
+          description: "{{ $value | humanizePercentage }} of requests are returning 5xx over the last 5m."
+
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API p95 latency above 2s"
+          description: "p95 latency is {{ $value | humanizeDuration }}."
+
+      - alert: IngestQueueBacklog
+        expr: photo_queue_depth > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Ingest queue backlog over 100 jobs"
+          description: "{{ $value }} jobs are waiting in the queue."
+
+      - alert: IngestFailureSpike
+        expr: |
+          rate(photo_job_total{status="failed"}[5m])
+          / (rate(photo_job_total[5m]) + 1e-9) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Ingest failure rate above 10%"
+          description: "{{ $value | humanizePercentage }} of ingest jobs are failing."
+
+      - alert: WorkerNotProcessing
+        expr: |
+          increase(photo_job_total[30m]) == 0
+          and photo_queue_depth > 0
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Worker appears to be down"
+          description: "Queue depth is {{ $value }} but no jobs have completed in the last 30 minutes."
