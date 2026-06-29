@@ -1,5 +1,5 @@
 # ── Stage 1: build the React frontend ───────────────────────────────────────
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /build
 COPY frontend/package*.json ./
 RUN npm ci --prefer-offline --legacy-peer-deps
