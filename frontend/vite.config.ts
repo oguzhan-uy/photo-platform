@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/app/',
   // In dev, proxy API calls to the FastAPI server so there are no CORS issues.
   server: {
     port: 5173,
