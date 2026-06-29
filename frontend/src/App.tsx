@@ -71,7 +71,7 @@ function AdminApp() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename="/app">
         <Routes>
           <Route path="/admin/*" element={<AdminApp />} />
           <Route path="/*" element={<ClientApp />} />

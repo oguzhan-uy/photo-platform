@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -56,10 +57,16 @@ def health(db: Session = Depends(get_db)) -> dict:
     return {"status": "ok" if ok else "degraded", "env": settings.env, "checks": checks}
 
 
-# Serve the React frontend.
-# Mounted last so API routes always take precedence.
-# In dev (npm run dev), Vite serves the frontend directly at :5173.
 _frontend_dist = Path(__file__).parent.parent / "frontend-dist"
 if _frontend_dist.exists():
-    app.mount("/app", StaticFiles(directory=str(_frontend_dist), html=True), name="frontend")
+    class SPAStaticFiles(StaticFiles):
+        async def get_response(self, path: str, scope):
+            try:
+                return await super().get_response(path, scope)
+            except StarletteHTTPException as e:
+                if e.status_code == 404:
+                    return await super().get_response("index.html", scope)
+                raise
+
+    app.mount("/app", SPAStaticFiles(directory=str(_frontend_dist), html=True), name="frontend")
 
