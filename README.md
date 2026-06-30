@@ -72,7 +72,17 @@ graph TB
 ## Running locally
 
 ```bash
+# Linux / macOS
 cp .env.example .env
+
+# Windows (Command Prompt)
+copy .env.example .env
+
+# Windows (PowerShell)
+Copy-Item .env.example .env
+```
+
+```bash
 docker compose up --build
 ```
 
@@ -104,7 +114,7 @@ Requires a Linux VPS with Docker, a Cloudflare account, and a Cloudflare R2 buck
 
 ```bash
 git clone https://github.com/oguzhan-uy/photo-platform /opt/photo
-cd /opt/photo && cp .env.example .env
+cd /opt/photo && cp .env.example .env   # then fill in the values below
 # fill in ADMIN_TOKEN, SECRET_KEY, R2_*, CLOUDFLARE_TUNNEL_TOKEN, APP_IMAGE
 docker compose --profile prod up -d
 ```
