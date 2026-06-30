@@ -147,6 +147,30 @@ def list_gallery_photos(gallery_id: uuid.UUID, db: Session = Depends(get_db)) ->
 
 
 
+@router.delete("/galleries/{gallery_id}/photos", status_code=200)
+def delete_all_photos(
+    gallery_id: uuid.UUID,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Delete every photo in a gallery: R2 objects, Face rows, then Photo rows."""
+    rows = db.execute(
+        select(Photo.id, Photo.r2_key_original, Photo.r2_key_web)
+        .where(Photo.gallery_id == gallery_id)
+    ).all()
+
+    keys = [k for r in rows for k in (r.r2_key_original, r.r2_key_web) if k]
+    if keys:
+        storage.delete_objects(keys)
+
+    photo_ids = [r.id for r in rows]
+    if photo_ids:
+        db.execute(delete(Face).where(Face.photo_id.in_(photo_ids)))
+        db.execute(delete(Photo).where(Photo.gallery_id == gallery_id))
+        db.commit()
+
+    return {"deleted": len(photo_ids)}
+
+
 @router.delete("/photos/{photo_id}", status_code=204)
 def delete_photo(
     photo_id: uuid.UUID,

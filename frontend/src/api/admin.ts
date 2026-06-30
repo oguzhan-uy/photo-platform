@@ -123,6 +123,9 @@ export const uploadPhoto = (galleryId: string, file: File): Promise<PhotoConfirm
 export const deletePhoto = (photoId: string) =>
   adminFetch<void>(`/admin/photos/${photoId}`, { method: 'DELETE' })
 
+export const deleteAllPhotos = (galleryId: string) =>
+  adminFetch<{ deleted: number }>(`/admin/galleries/${galleryId}/photos`, { method: 'DELETE' })
+
 // Clustering
 export const triggerClustering = (galleryId: string) =>
   adminFetch<{ job_id: string; gallery_id: string }>(
