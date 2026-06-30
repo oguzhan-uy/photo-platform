@@ -3,8 +3,13 @@ the get_db dependency. Auth secrets are set before app import."""
 import os
 import uuid
 
-os.environ.setdefault("ADMIN_TOKEN", "test-admin-token")
-os.environ.setdefault("SECRET_KEY", "test-secret-key")
+# Force-override so container env vars (from .env via docker-compose) don't win.
+os.environ["ADMIN_TOKEN"] = "test-admin-token"
+os.environ["SECRET_KEY"] = "test-secret-key"
+
+# Clear the lru_cache so Settings re-reads the forced values above.
+from app.config import get_settings  # noqa: E402
+get_settings.cache_clear()
 
 import pytest
 from fastapi.testclient import TestClient
