@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # Maximum photos returned by a single face search query.
     face_search_top_k: int = 20
     # HDBSCAN minimum cluster size; smaller values create more clusters.
-    face_min_cluster_size: int = 3
+    face_min_cluster_size: int = 2
 
 
 @lru_cache
