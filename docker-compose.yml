@@ -82,6 +82,7 @@ services:
     restart: unless-stopped
 
   node-exporter:
+    profiles: [prod]
     image: prom/node-exporter:v1.8.1
     pid: host
     volumes:
