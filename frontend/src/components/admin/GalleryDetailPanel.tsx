@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { listGalleries, listPhotos, uploadPhoto, deletePhoto, triggerClustering, listClients, setCoverPhoto, adminFetchBlob, resetGalleryFaces } from '../../api/admin'
+import { listGalleries, listPhotos, uploadPhoto, deletePhoto, deleteAllPhotos, triggerClustering, listClients, setCoverPhoto, adminFetchBlob, resetGalleryFaces } from '../../api/admin'
 import type { PhotoOut } from '../../types'
 
 function AdminPhotoThumb({ galleryId, photoId }: { galleryId: string; photoId: string }) {
@@ -56,6 +56,14 @@ export function GalleryDetailPanel() {
   const deleteMut = useMutation({
     mutationFn: deletePhoto,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'photos', galleryId] }),
+  })
+  const deleteAllMut = useMutation({
+    mutationFn: () => deleteAllPhotos(galleryId!),
+    onSuccess: data => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'photos', galleryId] })
+      setToast(`Deleted ${data.deleted} photo${data.deleted !== 1 ? 's' : ''}`)
+      setTimeout(() => setToast(null), 3000)
+    },
   })
   const coverMut = useMutation({
     mutationFn: (photoId: string) => setCoverPhoto(galleryId!, photoId),
@@ -259,6 +267,16 @@ export function GalleryDetailPanel() {
           <h3 className="text-neutral-300 text-sm font-medium">
             Photos {photos.length > 0 && <span className="text-neutral-500">({photos.length})</span>}
           </h3>
+          <div className="flex items-center gap-3">
+          {photos.length > 0 && (
+            <button
+              onClick={() => { if (confirm(`Delete all ${photos.length} photos? This cannot be undone.`)) deleteAllMut.mutate() }}
+              disabled={deleteAllMut.isPending}
+              className="px-3 py-1 bg-red-900/30 text-red-400 text-xs rounded-lg hover:bg-red-900/60 disabled:opacity-40 transition-colors"
+            >
+              {deleteAllMut.isPending ? 'Deleting…' : 'Delete all'}
+            </button>
+          )}
           {gallery.cover_photo_id && (
             <span className="text-xs text-indigo-400 flex items-center gap-1">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -267,6 +285,7 @@ export function GalleryDetailPanel() {
               Cover set
             </span>
           )}
+          </div>
         </div>
         {photosLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
