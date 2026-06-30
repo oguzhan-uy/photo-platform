@@ -68,18 +68,7 @@ export function GalleryDetailPanel() {
 
   const [uploads, setUploads] = useState<UploadEntry[]>([])
   const [toast, setToast] = useState<string | null>(null)
-  const [clusterJobId, setClusterJobId] = useState<string | null>(null)
-
-  const { data: clusterJob } = useQuery({
-    queryKey: ['job', clusterJobId],
-    queryFn: () => fetch(`/demo/job/${clusterJobId}`).then(r => r.json()) as Promise<{ status: string }>,
-    enabled: !!clusterJobId,
-    refetchInterval: (q) => {
-      const status = q.state.data?.status
-      return status === 'finished' || status === 'failed' ? false : 3000
-    },
-  })
-  const clusterStatus = clusterJob?.status ?? null
+  const [clusterStatus, setClusterStatus] = useState<string | null>(null)
 
   const gallery = galleries.find(g => g.id === galleryId)
   const client = clients.find(c => c.id === gallery?.client_id)
@@ -121,9 +110,12 @@ export function GalleryDetailPanel() {
   }
 
   const handleCluster = () => {
-    setClusterJobId(null)
+    setClusterStatus('running')
     clusterMut.mutate(undefined, {
-      onSuccess: data => setClusterJobId(data.job_id),
+      onSuccess: () => {
+        setTimeout(() => setClusterStatus('finished'), 4000)
+      },
+      onError: () => setClusterStatus('failed'),
     })
   }
 
@@ -162,7 +154,7 @@ export function GalleryDetailPanel() {
             </button>
             <button
               onClick={handleCluster}
-              disabled={clusterMut.isPending || (!!clusterStatus && clusterStatus !== 'finished' && clusterStatus !== 'failed')}
+              disabled={clusterMut.isPending || clusterStatus === 'running'}
               className="px-3 py-1.5 bg-neutral-800 text-neutral-300 text-xs rounded-lg hover:bg-neutral-700 disabled:opacity-40 transition-colors"
             >
               {clusterMut.isPending ? 'Queuing…' : 'Run clustering'}
@@ -178,7 +170,7 @@ export function GalleryDetailPanel() {
         </div>
 
         {/* Clustering status banner */}
-        {clusterJobId && clusterStatus && (
+        {clusterStatus && (
           <div className={`mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 border ${
             clusterStatus === 'finished'
               ? 'bg-green-950/50 border-green-800/50'
@@ -212,7 +204,7 @@ export function GalleryDetailPanel() {
                 )}
               </div>
             </div>
-            <button onClick={() => setClusterJobId(null)} className="text-neutral-500 hover:text-neutral-300 text-xs transition-colors flex-shrink-0">
+            <button onClick={() => setClusterStatus(null)} className="text-neutral-500 hover:text-neutral-300 text-xs transition-colors flex-shrink-0">
               Dismiss
             </button>
           </div>
