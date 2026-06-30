@@ -83,11 +83,19 @@ def _cluster(gallery_id: uuid.UUID, db) -> tuple[int, int]:
     min_size = max(2, settings.face_min_cluster_size)
 
     if len(embeddings) < min_size:
-        # Not enough faces to form any cluster; label all as noise.
         labels = np.full(len(embeddings), -1, dtype=int)
     else:
         clusterer = HDBSCAN(min_cluster_size=min_size, metric="euclidean", store_centers="centroid")
         labels = clusterer.fit_predict(embeddings)
+
+    # Promote noise faces (label -1) to solo clusters so they appear in the
+    # people row instead of being silently dropped. Assign IDs above the
+    # highest HDBSCAN cluster ID so they don't collide.
+    next_id = int(labels.max()) + 1 if (labels >= 0).any() else 0
+    for i, label in enumerate(labels):
+        if label == -1:
+            labels[i] = next_id
+            next_id += 1
 
     # Write labels back.
     for face_id, label in zip(face_ids, labels):
