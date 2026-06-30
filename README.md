@@ -1,6 +1,34 @@
 # Photo Delivery Platform
 
-Per-client photo galleries with secure delivery, async processing, and face-similarity search — self-hosted on a single VPS.
+A self-hosted platform for event and sports photographers to deliver photos securely to clients — with per-gallery passcode access, direct-to-cloud storage, and optional face-search so clients can find themselves in a crowd.
+
+## The Problem It Solves
+
+A photographer shoots 800 photos at a youth football tournament. Ten different families need their photos — and only their photos. Email is too slow, Google Drive is a mess, and third-party galleries take a cut or lock you in.
+
+This platform gives the photographer a private admin panel to upload once and share a password-protected link with each family. Each client logs in, sees only their gallery, and downloads presigned links directly from Cloudflare R2 — the server never touches the photo bytes.
+
+## Features
+
+**For the photographer (admin)**
+- Create clients and password-protected galleries
+- Register photos — get a presigned upload URL back, upload directly to R2
+- Set gallery expiry dates; a nightly job deletes expired galleries and logs the erasure
+- Hard-delete a client (GDPR): removes all DB rows, R2 objects, and writes a verifiable `DeletionLog`
+- Prometheus metrics + Grafana dashboards out of the box
+
+**For the client**
+- Authenticate with a per-gallery passcode → receive a short-lived scoped token
+- Browse only their own gallery; cross-gallery access returns 404, not 403
+- Download photos via presigned R2 GET URLs (no bandwidth through the server)
+- Opt into face search: find photos of yourself using face-similarity search (ArcFace embeddings + pgvector HNSW), browse by detected identity clusters
+
+**Platform**
+- Async ingest pipeline: thumbnailing, face detection, embedding — all in a background worker
+- Idempotent jobs with bounded retries and explicit failure state (no silent failures)
+- Biometric consent gate: face pipeline only runs if the client has opted in; revocation purges all embeddings
+- Structured JSON logging with correlation IDs on every request
+- Self-hosted on Hetzner VPS + Cloudflare R2 + Cloudflare Tunnel (zero open inbound ports)
 
 ## Architecture
 
@@ -69,7 +97,14 @@ graph TB
 - **Delivery:** client authenticates with a per-gallery passcode → API issues short-lived presigned GET URLs → browser fetches directly from R2
 - **Face search:** client consents → worker embeds detected faces via InsightFace → pgvector HNSW nearest-neighbour search scoped to that gallery → HDBSCAN clusters faces into identities for the people filter UI
 
+## Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Compose)
+- Node.js 18+ (only if running the frontend dev server)
+
 ## Running locally
+
+The default config uses MinIO (bundled in Docker Compose) as a local stand-in for Cloudflare R2 — no cloud credentials needed.
 
 ```bash
 # Linux / macOS
@@ -89,9 +124,11 @@ docker compose up --build
 | Service | URL |
 |---|---|
 | API + frontend | http://localhost:8000/app/ |
-| API docs | http://localhost:8000/docs |
+| API docs (Swagger) | http://localhost:8000/docs |
 | Grafana | http://localhost:3000 |
 | Prometheus | http://localhost:9090 |
+
+**Admin token:** the default `.env` sets `ADMIN_TOKEN=dev-admin-token-change-me`. Use this value as a `Bearer` token in the `Authorization` header when calling any `/admin/*` endpoint via the Swagger UI or curl.
 
 Frontend dev server (with HMR):
 ```bash
@@ -102,8 +139,7 @@ cd frontend && npm install && npm run dev
 ## Tests
 
 ```bash
-pip install -r requirements.txt
-pytest -q
+docker compose run api pytest -q
 ```
 
 Covers: access-control isolation, idempotent ingest, job failure/dead-letter, face pipeline consent gating, search scoping, GDPR erasure and DeletionLog.
