@@ -15,7 +15,7 @@ export function PeopleRow({ clusters, allPhotos, activeCluster, onSelect }: Prop
 
   return (
     <div className="bg-zinc-950 border-b border-zinc-800/60">
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-4 pt-4">
         <div className="flex items-center gap-1 mb-3">
           <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -23,8 +23,11 @@ export function PeopleRow({ clusters, allPhotos, activeCluster, onSelect }: Prop
           </svg>
           <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">People</span>
         </div>
+      </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
+      {/* Scroll container is intentionally outside max-w-7xl so it spans the full width */}
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-4 px-4 w-max">
           {/* "All" chip */}
           <button
             onClick={() => onSelect(null)}
@@ -64,4 +67,5 @@ export function PeopleRow({ clusters, allPhotos, activeCluster, onSelect }: Prop
       </div>
     </div>
   )
+
 }
