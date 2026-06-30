@@ -54,15 +54,30 @@ export function Lightbox({ photos, initialIndex, onClose }: Props) {
       className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center animate-fade-in"
       onClick={onClose}
     >
-      <button
-        className="absolute top-4 right-4 text-white/60 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
-        onClick={onClose}
-        aria-label="Close"
-      >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {blobUrl && (
+          <a
+            href={blobUrl}
+            download={`photo-${photo.id}.jpg`}
+            onClick={e => e.stopPropagation()}
+            className="text-white/60 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            aria-label="Download"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </a>
+        )}
+        <button
+          className="text-white/60 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
       <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/50 text-sm tabular-nums">
         {index + 1} / {photos.length}
